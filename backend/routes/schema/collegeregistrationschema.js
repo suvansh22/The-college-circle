@@ -11,7 +11,8 @@ const CollegeRegistration=new Schema({
     degree:{type:Array,required:true},
     name:{type:String,required:true},
     designation:{type:String,required:true},
-    email:{type:String,required:true}
+    email:{type:String,required:true},
+    approve:{type:Boolean,default:false}
 },{collection:'collegeregistration'})
 
 

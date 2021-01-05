@@ -13,6 +13,10 @@ import Select from '@material-ui/core/Select';
 import Button from '@material-ui/core/Button';
 import {useForm} from "react-hook-form"
 import {staffregistration} from './connection'
+import Backdrop from '@material-ui/core/Backdrop';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import MuiAlert from '@material-ui/lab/Alert'
+import Snackbar from '@material-ui/core/Snackbar';
 
 const useStyles = makeStyles((theme) => ({
     root:{
@@ -49,14 +53,21 @@ const useStyles = makeStyles((theme) => ({
         minWidth: 120,
         width:"100%"
       },
+      backdrop: {
+          zIndex: theme.zIndex.drawer + 1,
+          color: '#fff',
+        }
 }))
-
-export default function Register_Form(){
+function Alert(props) {
+    return <MuiAlert elevation={6} variant="filled" {...props} />;
+  }
+export default function Register_Form(props){
     const classes = useStyles()
-    const {register,handleSubmit,errors} = useForm({criteriaMode:"all"})
+    const {register,handleSubmit,errors,getValues} = useForm({criteriaMode:"all"})
     const [membertype,setMembertype] = React.useState("Student");
     const [collegename,setCollegeName] = React.useState();
-    const [list_college_name,set_list_college_name] = React.useState(["Japyee University Of Engineering And Technology","Lovely Professional University","Amity University"]);
+    // const [list_college_name,setList_college_name] = React.useState([])
+    const list_college_name = ["Japyee University Of Engineering And Technology","Lovely Professional University","Amity University"]
 
     const handleChangeCollegeName = (e) =>{
         setCollegeName(e.target.value)
@@ -66,13 +77,37 @@ export default function Register_Form(){
         setMembertype(e.target.value)
     }
 
+    const [aopen, setAopen] = React.useState({backdrop:false,snackbar:false});
+    const [open,setOpen] = React.useState(false)
+
     const onSubmit = (e) =>{
+        setOpen(true)
+        setAopen({backdrop:true})
+        delete e["confirmpassword"]
         e.membertype = membertype
         staffregistration(e)
-        .catch(error=>console.log(error))
-        .then(result=>console.log(result))
-        console.log(e)
+        .catch(error=>{
+            console.log(error)
+            setAopen({backdrop:false})
+        })
+        .then(e=>{
+            setAopen({backdrop:false,snackbar:true})
+            setTimeout(()=>props.history.replace({pathname:'/'}),5000)
+            })
     }
+
+    const sameAs = (field, getValues) => (value) => {
+        const compareTo = getValues()[field];
+        return (compareTo === value?true:"Password does not match");
+      }
+
+    //   React.useEffect(()=>{
+    //       getcollegename()
+    //       .then(async(result)=>{console.log(result);await setList_college_name(result.data.result)})
+    //       .catch(error=>console.log("error",error))
+    //   })
+
+
 
     return(
         <div className={classes.root}>
@@ -85,7 +120,7 @@ export default function Register_Form(){
                         inputRef={register({pattern: /^[A-Za-z]+$/i})}
                         name="firstname"
                         required
-                        id="outlined-required"
+                        id="firstname"
                         label="Firstname"
                         variant="outlined"
                         />
@@ -95,7 +130,7 @@ export default function Register_Form(){
                         <TextField
                         inputRef={register({pattern: /^[A-Za-z]+$/i})}
                         name="middlename"
-                        id="outlined-required"
+                        id="middlename"
                         label="Middlename"
                         variant="outlined"
                         />
@@ -106,7 +141,7 @@ export default function Register_Form(){
                         required
                         inputRef={register({pattern: /^[A-Za-z]+$/i})}
                         name="lastname"
-                        id="outlined-required"
+                        id="lastname"
                         label="Lastname"
                         variant="outlined"
                         />
@@ -144,7 +179,7 @@ export default function Register_Form(){
                         name = "enrollmentno"
                         inputRef = {register}
                         required
-                        id="outlined-required"
+                        id="enrollmentno"
                         label="Enrollment no"
                         variant="outlined"
                         className={classes.grid}
@@ -155,12 +190,39 @@ export default function Register_Form(){
                         name = "email"
                         inputRef = {register({pattern: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/})}
                         required
-                        id="outlined-required"
+                        id="email"
                         label="Email id"
                         variant="outlined"
                         className={classes.grid}
                         />
                         {errors.email && errors.email.type==="pattern" && (<p style={{WebkitTextFillColor:"red"}}>Input is wrong</p>)}
+                    </Grid>
+                    <Grid item xs ={12} sm = {6}>
+                        <TextField
+                        name = "password"
+                        inputRef = {register({minLength:10})}
+                        required
+                        type="password"
+                        id="password"
+                        label="password"
+                        variant="outlined"
+                        className={classes.grid}
+                        />
+                        {errors.password && errors.password.type==="minLength" && (<p style={{WebkitTextFillColor:"red"}}>Atleast 10 in length</p>)}
+                    </Grid>
+                    <Grid item xs ={12} sm = {6}>
+                        <TextField
+                        name = "confirmpassword"
+                        inputRef = {register({minLength:10,validate:{sameAs:sameAs('password',getValues)}})}
+                        required
+                        type="password"
+                        id="confirm password"
+                        label="confirm password"
+                        variant="outlined"
+                        className={classes.grid}
+                        />
+                        {errors.confirmpassword && errors.confirmpassword.type==="minLength" && (<p style={{WebkitTextFillColor:"red"}}>Atleast 10 in length</p>)}
+                        {errors.confirmpassword && errors.confirmpassword.type==="sameAs" && (<p style={{WebkitTextFillColor:"red"}}>Password does not match</p>)}
                     </Grid>
                     <Grid item xs = {12} className={classes.grid}>
                         <Button type="submit" variant="contained" color="primary">
@@ -170,6 +232,14 @@ export default function Register_Form(){
                 </Grid>
                 </form>
             </Paper>
+            <Backdrop className={classes.backdrop} open={open}>
+                {aopen.backdrop?<CircularProgress color="inherit" />:aopen.snackbar?
+            <Snackbar open={aopen.snackbar} autoHideDuration={6000}>
+                <Alert severity="success">
+                You have been registered
+                </Alert>
+            </Snackbar>:null}
+            </Backdrop>
         </div>
     )
 }

@@ -12,6 +12,7 @@ import InputLabel from '@material-ui/core/InputLabel';
 import Select from '@material-ui/core/Select';
 import Button from '@material-ui/core/Button';
 import {useForm} from "react-hook-form"
+import {login} from './connection'
 
 const useStyles = makeStyles((theme) => ({
     root:{
@@ -50,12 +51,12 @@ const useStyles = makeStyles((theme) => ({
       },
 }))
 
-export default function Login_Form(){
+export default function Login_Form(props){
     const classes = useStyles()
     const {register,handleSubmit,errors} = useForm({criteriaMode:"all"})
     const [membertype,setMembertype] = React.useState("Student");
     const [collegename,setCollegeName] = React.useState();
-    const [list_college_name,set_list_college_name] = React.useState(["Japyee University Of Engineering And Technology","Lovely Professional University","Amity University"]);
+    const list_college_name = ["Japyee University Of Engineering And Technology","Lovely Professional University","Amity University"]
 
     const handleChangeCollegeName = (e) =>{
         setCollegeName(e.target.value)
@@ -65,8 +66,28 @@ export default function Login_Form(){
         setMembertype(e.target.value)
     }
 
-    const onSubmit = (e) =>{
-        console.log(e)
+    const onSubmit = async(e) =>{
+        e.membertype=membertype
+        await login(e)
+        .then((result)=>{
+            localStorage.setItem("collegename",e.collegename)
+            localStorage.setItem("email",e.email)
+            localStorage.setItem("membertype",e.membertype)
+            props.history.push({pathname:"/the_college_circle"})})
+        .catch(error=>{
+            if(error.response.data.message === "wrong password")
+            {
+                alert("wrong password, please try again")
+            }
+            else if(error.response.data.message === "User doesn't exist")
+            {
+                alert("User does not exist")
+            }
+            else
+            {
+                alert("something went wrong, please try again")
+            }
+        })
     }
 
     return(
@@ -90,7 +111,7 @@ export default function Login_Form(){
                             native
                             value={collegename}
                             onChange={handleChangeCollegeName}
-                            name="College Name"
+                            name="collegename"
                             inputProps={{
                                 id: 'college-name-required',
                             }}
@@ -102,24 +123,24 @@ export default function Login_Form(){
                             </Select>
                         </FormControl>  
                     </Grid>
-                    <Grid item xs ={12} sm = {12}>
+                    <Grid item xs ={6} sm = {6}>
                         <TextField
-                        name = "Email_id"
+                        name = "email"
                         inputRef = {register({pattern: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/})}
                         required
-                        id="outlined-required"
+                        id="email"
                         label="Email id"
                         variant="outlined"
                         />
                         {errors.Email_id && errors.Email_id.type==="pattern" && (<p style={{WebkitTextFillColor:"red"}}>Input is wrong</p>)}
                     </Grid>
-                    <Grid item xs ={12} sm = {12}>
+                    <Grid item xs ={6} sm = {6}>
                         <TextField
-                        name = "Password"
+                        name = "password"
                         inputRef = {register}
                         required
                         type="password"
-                        id="outlined-required"
+                        id="password"
                         label="Password"
                         variant="outlined"
                         />
